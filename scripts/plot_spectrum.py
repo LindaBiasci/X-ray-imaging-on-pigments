@@ -1,4 +1,7 @@
-"""Plot spectra obtained as csv files from laboratory simulations and measurements"""
+"""Plot spectra obtained as csv files from laboratory simulations and measurements:
+'separate' mode is meant for simulations (i.e. plot incident, background and detail spectra),
+'overlap' mode is meant for measurements (i.e. compare total attenuation of different samples);
+default mode is 'both', which returns a separated plot and an overlapped plot (two figures)"""
 
 import argparse
 import os
@@ -12,16 +15,27 @@ def main():
     parser.add_argument("file", nargs="+", help="Enter one or more csv file paths")
     parser.add_argument("--delimiter", default=";", help="Enter separator (default is ;)")
     parser.add_argument("--header", action="store_true", help="Does the csv file have a header?")
+    parser.add_argument("--mode", choices=["separate", "overlap", "both"], default="both",
+                        help="Choose plot mode: separate, overlap or both (default)")
 
     args = parser.parse_args()
 
     n_files = len(args.file)
-    _, axes = plt.subplots(n_files, 1, figsize=(8, 3 * n_files), sharex=True)
+    fig_sep, axes = None, None
+    fig_overlap, ax_overlap = None, None
 
-    if n_files == 1:
-        axes = [axes]
+    # whenever separated plots are requested
+    if args.mode in ["separate", "both"]:
+        fig_sep, axes = plt.subplots(n_files, 1, figsize=(8, 3 * n_files), sharex=True)
+        if n_files == 1:
+            axes = [axes]
 
-    for ax, file_path in zip(axes, args.file):
+    # whenever overlapped plots are requested
+    if args.mode in ["overlap", "both"]:
+        fig_overlap, ax_overlap = plt.subplots(figsize=(10, 6))
+
+    # read data from the given csv files
+    for idx, file_path in enumerate(args.file):
         filename = os.path.splitext(os.path.basename(file_path))[0]
 
         if args.header:
@@ -32,13 +46,29 @@ def main():
         x = df.iloc[:, 0]
         y = df.iloc[:, 1]
 
-        ax.plot(x, y, linewidth=1)
-        ax.set_title(filename)
-        ax.set_ylabel("Fluence")
+        # for separated plots
+        if axes is not None:
+            ax = axes[idx]
+            ax.plot(x, y, linewidth=1)
+            ax.set_title(filename)
+            ax.set_ylabel("Fluence")
+            ax.grid(True)
 
-        ax.grid(True)
+        # for overlapped plots
+        if ax_overlap is not None:
+            ax_overlap.plot(x, y, linewidth=1.2, label=filename)
 
-    axes[-1].set_xlabel("Energy (keV)")
+    # final configurations
+
+    if axes is not None:
+        axes[-1].set_xlabel("Energy (keV)")
+
+    if ax_overlap is not None:
+        ax_overlap.set_title("Overlapped X-ray Spectra")
+        ax_overlap.set_xlabel("Energy (keV)")
+        ax_overlap.set_ylabel("Total attenuation")
+        ax_overlap.grid(True, which="both", ls=":")
+        ax_overlap.legend(loc="upper right")
 
     plt.tight_layout()
     plt.show()

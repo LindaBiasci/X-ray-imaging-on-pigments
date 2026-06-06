@@ -14,6 +14,8 @@ def main():
                         help="Enter file path for I_0 (incident radiation)",)
     parser.add_argument("--delimiter", default=";",
                         help="Enter separator (default is ;)")
+    parser.add_argument("-o", "--output", default=None,
+                        help="Enter file path to save the output csv data (optional)")
 
     # add calibration parameters as optional (default values from fit)
     parser.add_argument("--m_cal", type=float, default=7.673,
@@ -56,6 +58,18 @@ def main():
     kernel = np.ones(window_size) / window_size
     a_smooth = np.convolve(a, kernel, mode='valid')
     x_keV_smooth = np.convolve(x_keV, kernel, mode='valid')
+
+    if args.output:
+        try:
+            # save smoothed energies and attenuation values in a csv file
+            output_data = np.column_stack((x_keV_smooth, a_smooth))
+            header = "Energy_keV;Total_attenuation"
+            np.savetxt(args.output, output_data, delimiter=args.delimiter, header=header, comments='')
+            print(f"Saved data in {args.output}")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Could not find the required file path: {args.output}")
+        except OSError as e:
+            raise RuntimeError(f"Failed data saving: {e}")
 
     plt.figure("Total attenuation", figsize=(10, 6))
     plt.plot(x_keV_smooth, a_smooth, color="darkred", lw=0.8, label="Total attenuation")

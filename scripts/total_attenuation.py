@@ -72,7 +72,8 @@ def main():
             raise RuntimeError(f"Failed data saving: {e}")
 
     plt.figure("Total attenuation", figsize=(10, 6))
-    plt.plot(x_keV_smooth, a_smooth, color="darkred", lw=0.8, label="Total attenuation")
+    plt.plot(x_keV, a, color="lime", lw=0.6, label="Total attenuation")
+    plt.plot(x_keV_smooth, a_smooth, color="darkred", lw=0.9, label="Total attenuation, smoothed")
     plt.title("Measured total attenuation (calibrated) with smoothing")
     plt.xlabel("Energy [keV]")
     plt.ylabel(r"$-\ln(I/I_0)$")
